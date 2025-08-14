@@ -10,6 +10,10 @@ export default function LoginViaMobilePage() {
   const onSubmit = async (e) => {
     e.preventDefault();
     // Placeholder: call backend to send OTP
+    // Ensure CSRF cookie is present
+    try {
+      await fetch('/api/csrf');
+    } catch {}
     router.push('/auth/otp-verification');
   };
 

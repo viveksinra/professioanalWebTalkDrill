@@ -6,9 +6,11 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { CONFIG } from 'src/global-config';
 import { primary } from 'src/theme/core/palette';
 import { themeConfig, ThemeProvider } from 'src/theme';
+import { talkdrillTheme } from 'src/theme/overrides/talkdrillTheme';
 
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
+import TabsBoundary from 'src/components/layout/TabsBoundary';
 import { detectSettings } from 'src/components/settings/server';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
@@ -71,14 +73,15 @@ export default async function RootLayout({ children }) {
                 defaultSettings={defaultSettings}
               >
                 <AppRouterCacheProvider options={{ key: 'css' }}>
-                  <ThemeProvider
-                    modeStorageKey={themeConfig.modeStorageKey}
-                    defaultMode={themeConfig.defaultMode}
-                  >
+              <ThemeProvider
+                modeStorageKey={themeConfig.modeStorageKey}
+                defaultMode={themeConfig.defaultMode}
+                themeOverrides={talkdrillTheme}
+              >
                     <MotionLazy>
                       <ProgressBar />
                       <SettingsDrawer defaultSettings={defaultSettings} />
-                      {children}
+                      <TabsBoundary>{children}</TabsBoundary>
                     </MotionLazy>
                   </ThemeProvider>
                 </AppRouterCacheProvider>

@@ -1,3 +1,5 @@
-import TabsNav from 'src/components/layout/TabsNav';
+export default function TabsLayout({ children }) {
+  return children;
+}
 
-export default function
+

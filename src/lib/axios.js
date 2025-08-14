@@ -52,6 +52,21 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
+    try {
+      const status = error?.response?.status;
+      if (status === 401) {
+        // Clear client token and redirect to login
+        try {
+          sessionStorage.removeItem('accessToken');
+        } catch {}
+        if (typeof window !== 'undefined') {
+          fetch('/api/auth/logout', { method: 'POST' }).finally(() => {
+            window.location.href = '/auth/login';
+          });
+        }
+      }
+    } catch {}
+
     const message = error?.response?.data?.message || error?.message || 'Something went wrong!';
     console.error('Axios error:', message);
     return Promise.reject(new Error(message));

@@ -25,7 +25,17 @@ export function AuthProvider({ children }) {
 
         const { user } = res.data;
 
-        setState({ user: { ...user, accessToken }, loading: false });
+        // Apply KYC/account flags from cookies on initial load to drive middleware-compatible UI
+        let haveAccountDetails = false;
+        let kycStatus = 'submitted';
+        try {
+          const cookieStr = typeof document !== 'undefined' ? document.cookie : '';
+          haveAccountDetails = /haveAccountDetails=true/.test(cookieStr);
+          const match = cookieStr.match(/kycStatus=([^;]+)/);
+          if (match?.[1]) kycStatus = decodeURIComponent(match[1]);
+        } catch {}
+
+        setState({ user: { ...user, accessToken, haveAccountDetails, kycStatus }, loading: false });
       } else {
         setState({ user: null, loading: false });
       }

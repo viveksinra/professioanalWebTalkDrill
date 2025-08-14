@@ -11,12 +11,18 @@ export default function OtpVerificationPage() {
     e.preventDefault();
     // Placeholder: exchange OTP for token from backend; here simulate token
     const token = 'mock-token';
+    try {
+      sessionStorage.setItem('jwt_access_token', token);
+    } catch {}
     await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
-    router.replace('/dashboard');
+    // Set gating cookies for demo flow
+    document.cookie = 'haveAccountDetails=false; path=/';
+    document.cookie = 'kycStatus=submitted; path=/';
+    router.replace('/kyc/account-setup');
   };
 
   return (

@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 export function middleware(request) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get('accessToken')?.value;
+  const kycStatus = request.cookies.get('kycStatus')?.value; // submitted|approved
+  const haveAccountDetails = request.cookies.get('haveAccountDetails')?.value; // 'true'|'false'
 
   const isProtectedPath = [
     '/dashboard',
@@ -28,6 +30,37 @@ export function middleware(request) {
     return NextResponse.redirect(url);
   }
 
+  // After login, gate by account details and KYC status.
+  if (accessToken) {
+    const inKyc = pathname.startsWith('/kyc');
+    const inAuth = pathname.startsWith('/auth');
+
+    if (haveAccountDetails !== 'true' && !inKyc) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/kyc/account-setup';
+      return NextResponse.redirect(url);
+    }
+
+    if (haveAccountDetails === 'true' && !inKyc) {
+      if (kycStatus === 'submitted') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/kyc/kyc-submitted';
+        return NextResponse.redirect(url);
+      }
+      if (kycStatus !== 'approved') {
+        const url = request.nextUrl.clone();
+        url.pathname = '/kyc/kyc-verification';
+        return NextResponse.redirect(url);
+      }
+    }
+
+    if (inAuth) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/dashboard';
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -48,6 +81,8 @@ export const config = {
     '/professional-session-call/:path*',
     '/student-review/:path*',
     '/chat/:path*',
+    '/auth/:path*',
+    '/kyc/:path*',
   ],
 };
 
