@@ -25,6 +25,108 @@ const axiosInstance = axios.create({
 *
  */
 
+// ----------------------------------------------------------------------
+// Timezone conversion helpers (parity with mobile)
+// ----------------------------------------------------------------------
+
+const UTC_TO_LOCAL_FIELDS = [
+  'scheduledDate',
+  'scheduledTime',
+  'scheduledDateTime',
+  'scheduledDateTimeUTC',
+  'endDateTime',
+  'endDateTimeUTC',
+  'startTime',
+  'endTime',
+  'createdAt',
+  'updatedAt',
+  'dateJoined',
+  'lastLoginDate',
+  'reminderTime',
+  'sessionTime',
+  'bookingTime',
+  'cancelledAt',
+  'completedAt',
+  'timestamp',
+  'date',
+  'time',
+  'weekStartDate',
+  'weekEndDate',
+  'payoutDate',
+  'processedAt',
+];
+
+const LOCAL_TO_UTC_FIELDS = [
+  'scheduledDate',
+  'scheduledTime',
+  'scheduledDateTime',
+  'newDate',
+  'newTime',
+  'startDate',
+  'endDate',
+  'date',
+  'time',
+];
+
+function toIso(input) {
+  if (!input) return input;
+  try {
+    const d = new Date(input);
+    if (Number.isNaN(d.getTime())) return input;
+    return d.toISOString();
+  } catch {
+    return input;
+  }
+}
+
+function convertRequestTimesToUTC(data) {
+  if (!data || typeof data !== 'object' || data instanceof FormData) return data;
+  const converted = { ...data };
+  LOCAL_TO_UTC_FIELDS.forEach((field) => {
+    if (converted[field]) {
+      if (field === 'scheduledTime' && converted['scheduledDate']) {
+        const dateTime = `${converted['scheduledDate']}T${converted[field]}:00`;
+        const iso = toIso(dateTime);
+        const isoDate = new Date(iso);
+        converted['scheduledDate'] = isoDate.toISOString().split('T')[0];
+        converted[field] = isoDate.toISOString().split('T')[1].slice(0, 5);
+      } else {
+        converted[field] = toIso(converted[field]);
+      }
+    }
+  });
+  Object.keys(converted).forEach((k) => {
+    if (converted[k] && typeof converted[k] === 'object' && !Array.isArray(converted[k])) {
+      converted[k] = convertRequestTimesToUTC(converted[k]);
+    }
+    if (Array.isArray(converted[k])) {
+      converted[k] = converted[k].map((it) => (typeof it === 'object' ? convertRequestTimesToUTC(it) : it));
+    }
+  });
+  return converted;
+}
+
+function convertResponseTimesToLocal(data) {
+  if (!data) return data;
+  if (Array.isArray(data)) return data.map((it) => convertResponseTimesToLocal(it));
+  if (typeof data !== 'object') return data;
+  const converted = { ...data };
+  UTC_TO_LOCAL_FIELDS.forEach((field) => {
+    if (converted[field]) {
+      if (field === 'scheduledTime' && typeof converted[field] === 'string' && /^\d{2}:\d{2}$/.test(converted[field])) {
+        return;
+      }
+      converted[field] = toIso(converted[field]);
+    }
+  });
+  Object.keys(converted).forEach((k) => {
+    if (converted[k] && typeof converted[k] === 'object') {
+      converted[k] = convertResponseTimesToLocal(converted[k]);
+    }
+  });
+  return converted;
+}
+
 // Attach timezone header and bearer token if present
 axiosInstance.interceptors.request.use((config) => {
   try {
@@ -46,11 +148,24 @@ axiosInstance.interceptors.request.use((config) => {
     }
   } catch {}
 
+  try {
+    if (config.data && typeof config.data === 'object') {
+      config.data = convertRequestTimesToUTC(config.data);
+    }
+  } catch {}
+
   return config;
 });
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    try {
+      if (response?.data) {
+        response.data = convertResponseTimesToLocal(response.data);
+      }
+    } catch {}
+    return response;
+  },
   (error) => {
     try {
       const status = error?.response?.status;

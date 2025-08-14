@@ -5,6 +5,10 @@ export const professionalService = {
     const { data } = await axios.get('/api/professional/profile');
     return data;
   },
+  async verifyUsername(username) {
+    const { data } = await axios.post('/api/professional/verify-username', { username });
+    return data;
+  },
   async updateProfile(payload) {
     const { data } = await axios.put('/api/professional/profile', payload);
     return data;

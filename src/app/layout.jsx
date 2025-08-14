@@ -14,9 +14,7 @@ import TabsBoundary from 'src/components/layout/TabsBoundary';
 import { detectSettings } from 'src/components/settings/server';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
-import { AuthProvider } from 'src/auth/context/jwt';
-import { SocketProvider } from 'src/contexts/socket/SocketProvider';
-import { NotificationProvider } from 'src/contexts/notification/NotificationProvider';
+import ClientProviders from 'src/components/layout/ClientProviders';
 
 // ----------------------------------------------------------------------
 
@@ -65,30 +63,26 @@ export default async function RootLayout({ children }) {
           defaultMode={themeConfig.defaultMode}
         />
 
-        <AuthProvider>
-          <SocketProvider>
-            <NotificationProvider>
-              <SettingsProvider
-                cookieSettings={appConfig.cookieSettings}
-                defaultSettings={defaultSettings}
-              >
-                <AppRouterCacheProvider options={{ key: 'css' }}>
-              <ThemeProvider
-                modeStorageKey={themeConfig.modeStorageKey}
-                defaultMode={themeConfig.defaultMode}
-                themeOverrides={talkdrillTheme}
-              >
-                    <MotionLazy>
-                      <ProgressBar />
-                      <SettingsDrawer defaultSettings={defaultSettings} />
-                      <TabsBoundary>{children}</TabsBoundary>
-                    </MotionLazy>
-                  </ThemeProvider>
-                </AppRouterCacheProvider>
-              </SettingsProvider>
-            </NotificationProvider>
-          </SocketProvider>
-        </AuthProvider>
+        <SettingsProvider
+          cookieSettings={appConfig.cookieSettings}
+          defaultSettings={defaultSettings}
+        >
+          <AppRouterCacheProvider options={{ key: 'css' }}>
+            <ThemeProvider
+              modeStorageKey={themeConfig.modeStorageKey}
+              defaultMode={themeConfig.defaultMode}
+              themeOverrides={talkdrillTheme}
+            >
+              <ClientProviders>
+                <MotionLazy>
+                  <ProgressBar />
+                  <SettingsDrawer defaultSettings={defaultSettings} />
+                  <TabsBoundary>{children}</TabsBoundary>
+                </MotionLazy>
+              </ClientProviders>
+            </ThemeProvider>
+          </AppRouterCacheProvider>
+        </SettingsProvider>
       </body>
     </html>
   );
